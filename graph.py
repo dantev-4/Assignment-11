@@ -185,21 +185,24 @@ class ImageGraph:
 
     def bfs(self, start_index, color):
         self.reset_visited()
-        print("Starting BFS; initial state:")
-        self.print_image()
-
         queue = Queue()
         queue.enqueue(start_index)
 
         start_color = self.vertices[start_index].color
+
         while not queue.is_empty():
             current_index = queue.dequeue()
             current_vertex = self.vertices[current_index]
 
             if not current_vertex.visited and current_vertex.color == start_color:
                 current_vertex.visit_and_set_color(color)
-                for neighbor in current_vertex.edges:
-                    queue.enqueue(neighbor)
+                current_vertex.visited = True
+
+                for neighbor_index in current_vertex.edges:
+                    neighbor_vertex = self.vertices[neighbor_index]
+                    if not neighbor_vertex.visited and neighbor_vertex.color == start_color:
+                        queue.enqueue(neighbor_index)
+
 
     def dfs(self, start_index, color):
         self.reset_visited()
