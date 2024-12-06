@@ -19,7 +19,7 @@ UT EID 2:
 import sys
 
 # -----------------------PRINTING LOGIC, DON'T WORRY ABOUT THIS PART----------------------------
-RESET_CHAR = "\u001b[0m"  # Code to reset the terminal color
+RESET_CHAR = "\u001b[0m"
 COLOR_DICT = {
     "black": "\u001b[30m",
     "red": "\u001b[31m",
@@ -30,11 +30,10 @@ COLOR_DICT = {
     "cyan": "\u001b[36m",
     "white": "\u001b[37m",
 }
-BLOCK_CHAR = "\u2588"  # Character code for a block
+BLOCK_CHAR = "\u2588"
 
 
 def colored(text, color):
-    """Wrap the string with the color code."""
     color = color.strip().lower()
     if color not in COLOR_DICT:
         raise ValueError(color + " is not a valid color!")
@@ -42,16 +41,13 @@ def colored(text, color):
 
 
 def print_block(color):
-    """Print a block in the specified color."""
     print(colored(BLOCK_CHAR, color) * 2, end="")
+
 
 # -----------------------PRINTING LOGIC, DON'T WORRY ABOUT THIS PART----------------------------
 
 
 class Node:
-    """
-    Represents a node in a singly linked list.
-    """
     def __init__(self, data, next=None):
         self.data = data
         self.next = next
@@ -119,12 +115,12 @@ class Queue:
     def dequeue(self):
         if self.is_empty():
             raise QueueError("Dequeue from empty queue.")
-        front_data = self._front.data
+        removed_data = self._front.data
         self._front = self._front.next
         if self._front is None:
             self._rear = None
         self._size -= 1
-        return front_data
+        return removed_data
 
     def is_empty(self):
         return self._size == 0
@@ -161,12 +157,16 @@ class ImageGraph:
         self.image_size = image_size
 
     def print_image(self):
-        img = [["black" for _ in range(self.image_size)] for _ in range(self.image_size)]
+        img = [
+            ["black" for _ in range(self.image_size)] for _ in range(self.image_size)
+        ]
+
         for vertex in self.vertices:
             img[vertex.y][vertex.x] = vertex.color
+
         for line in img:
             for pixel in line:
-                print_block(pixel)
+                print(colored(BLOCK_CHAR, pixel) * 2, end="")
             print()
         print(RESET_CHAR)
 
@@ -175,11 +175,12 @@ class ImageGraph:
             vertex.visited = False
 
     def create_adjacency_matrix(self):
-        size = len(self.vertices)
-        matrix = [[0] * size for _ in range(size)]
+        n = len(self.vertices)
+        matrix = [[0] * n for _ in range(n)]
+
         for vertex in self.vertices:
-            for neighbor in vertex.edges:
-                matrix[vertex.index][neighbor] = 1
+            for edge in vertex.edges:
+                matrix[vertex.index][edge] = 1
         return matrix
 
     def bfs(self, start_index, color):
@@ -189,20 +190,16 @@ class ImageGraph:
 
         queue = Queue()
         queue.enqueue(start_index)
-        start_vertex = self.vertices[start_index]
-        target_color = start_vertex.color
 
+        start_color = self.vertices[start_index].color
         while not queue.is_empty():
-            current = queue.dequeue()
-            vertex = self.vertices[current]
+            current_index = queue.dequeue()
+            current_vertex = self.vertices[current_index]
 
-            if not vertex.visited and vertex.color == target_color:
-                vertex.visit_and_set_color(color)
-                for neighbor in vertex.edges:
+            if not current_vertex.visited and current_vertex.color == start_color:
+                current_vertex.visit_and_set_color(color)
+                for neighbor in current_vertex.edges:
                     queue.enqueue(neighbor)
-
-        print("Final BFS state:")
-        self.print_image()
 
     def dfs(self, start_index, color):
         self.reset_visited()
@@ -211,60 +208,57 @@ class ImageGraph:
 
         stack = Stack()
         stack.push(start_index)
-        start_vertex = self.vertices[start_index]
-        target_color = start_vertex.color
 
+        start_color = self.vertices[start_index].color
         while not stack.is_empty():
-            current = stack.pop()
-            vertex = self.vertices[current]
+            current_index = stack.pop()
+            current_vertex = self.vertices[current_index]
 
-            if not vertex.visited and vertex.color == target_color:
-                vertex.visit_and_set_color(color)
-                for neighbor in reversed(vertex.edges):
+            if not current_vertex.visited and current_vertex.color == start_color:
+                current_vertex.visit_and_set_color(color)
+                for neighbor in current_vertex.edges:
                     stack.push(neighbor)
-
-        print("Final DFS state:")
-        self.print_image()
 
 
 def create_graph(data):
     lines = data.strip().split("\n")
-    image_size = int(lines[0])
+    size = int(lines[0])
     num_vertices = int(lines[1])
-    graph = ImageGraph(image_size)
+
+    graph = ImageGraph(size)
 
     for i in range(2, 2 + num_vertices):
-        x, y, color = lines[i].split(", ")
-        graph.vertices.append(ColoredVertex(i - 2, int(x), int(y), color))
+        x, y, color = lines[i].split(",")
+        graph.vertices.append(ColoredVertex(i - 2, int(x), int(y), color.strip()))
 
     num_edges = int(lines[2 + num_vertices])
-
     for i in range(3 + num_vertices, 3 + num_vertices + num_edges):
-        v1, v2 = map(int, lines[i].split(", "))
-        graph.vertices[v1].add_edge(v2)
-        graph.vertices[v2].add_edge(v1)
+        from_idx, to_idx = map(int, lines[i].split(","))
+        graph.vertices[from_idx].add_edge(to_idx)
+        graph.vertices[to_idx].add_edge(from_idx)
 
-    start_index, color = lines[3 + num_vertices + num_edges].split(", ")
-    return graph, int(start_index), color
+    start_index, fill_color = lines[3 + num_vertices + num_edges].split(",")
+    return graph, int(start_index), fill_color.strip()
 
 
 def main():
     data = sys.stdin.read()
-    graph, start_index, color = create_graph(data)
+    graph, start_index, fill_color = create_graph(data)
 
-    print("Adjacency Matrix:")
     adjacency_matrix = graph.create_adjacency_matrix()
     for row in adjacency_matrix:
-        print(" ".join(map(str, row)))
+        print(row)
 
-    print("\nRunning BFS:")
-    graph.bfs(start_index, color)
+    print("\nBFS:")
+    graph.bfs(start_index, fill_color)
+    graph.print_image()
 
-    print("\nResetting graph and running DFS:")
-    graph, start_index, color = create_graph(data)
-    graph.dfs(start_index, color)
+    graph, start_index, fill_color = create_graph(data)
+
+    print("\nDFS:")
+    graph.dfs(start_index, fill_color)
+    graph.print_image()
 
 
 if __name__ == "__main__":
     main()
-
