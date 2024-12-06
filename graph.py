@@ -189,40 +189,39 @@ class ImageGraph:
         queue.enqueue(start_index)
 
         start_color = self.vertices[start_index].color
+        self.vertices[start_index].visited = True
 
         while not queue.is_empty():
             current_index = queue.dequeue()
             current_vertex = self.vertices[current_index]
+            current_vertex.visit_and_set_color(color)
 
-            if not current_vertex.visited and current_vertex.color == start_color:
-                current_vertex.visit_and_set_color(color)
-                current_vertex.visited = True
-
-                for neighbor_index in current_vertex.edges:
-                    neighbor_vertex = self.vertices[neighbor_index]
-                    if not neighbor_vertex.visited and neighbor_vertex.color == start_color:
-                        queue.enqueue(neighbor_index)
-
+            for neighbor_index in current_vertex.edges:
+                neighbor_vertex = self.vertices[neighbor_index]
+                if not neighbor_vertex.visited and neighbor_vertex.color == start_color:
+                    queue.enqueue(neighbor_index)
+                    neighbor_vertex.visited = True
 
     def dfs(self, start_index, color):
         self.reset_visited()
-        print("Starting DFS; initial state:")
-        self.print_image()
-
         stack = Stack()
         stack.push(start_index)
 
         start_color = self.vertices[start_index].color
+        self.vertices[start_index].visited = True
+
         while not stack.is_empty():
             current_index = stack.pop()
             current_vertex = self.vertices[current_index]
+            current_vertex.visit_and_set_color(color)
 
-            if not current_vertex.visited and current_vertex.color == start_color:
-                current_vertex.visit_and_set_color(color)
-                for neighbor in current_vertex.edges:
-                    stack.push(neighbor)
+            for neighbor_index in reversed(current_vertex.edges):
+                neighbor_vertex = self.vertices[neighbor_index]
+                if not neighbor_vertex.visited and neighbor_vertex.color == start_color:
+                    stack.push(neighbor_index)
+                    neighbor_vertex.visited = True
 
-
+ 
 def create_graph(data):
     lines = data.strip().split("\n")
     size = int(lines[0])
